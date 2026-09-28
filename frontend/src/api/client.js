@@ -1,9 +1,12 @@
 function urlBase() {
   const url = import.meta.env.VITE_API_URL;
-  if (!url) {
+  if (url) {
+    return String(url).replace(/\/$/, "");
+  }
+  if (import.meta.env.DEV) {
     throw new Error("Falta VITE_API_URL");
   }
-  return String(url).replace(/\/$/, "");
+  return "";
 }
 
 function mensajeDeError(datos) {

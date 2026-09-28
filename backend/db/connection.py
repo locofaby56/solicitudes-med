@@ -37,12 +37,36 @@ def _url_base() -> str:
     return f"mysql+pymysql://{usuario}:{clave}@{host}:{puerto}/{base}?charset=utf8mb4"
 
 
+def _argumentos_conexion() -> dict:
+    marca = os.environ.get("DB_SSL", "").strip().lower()
+    if marca in {"1", "true", "yes", "si", "sí"}:
+        return {"ssl": {}}
+    return {}
+
+
 class Base(DeclarativeBase):
     pass
 
 
-motor = create_engine(_url_base(), pool_pre_ping=True)
-SesionLocal = sessionmaker(bind=motor, autoflush=False, autocommit=False)
+_motor = None
+_sesiones = None
+
+
+def _fabrica():
+    global _motor, _sesiones
+    if _sesiones is None:
+        _motor = create_engine(
+            _url_base(),
+            pool_pre_ping=True,
+            pool_recycle=280,
+            connect_args=_argumentos_conexion(),
+        )
+        _sesiones = sessionmaker(bind=_motor, autoflush=False, autocommit=False)
+    return _sesiones
+
+
+def SesionLocal():
+    return _fabrica()()
 
 
 def obtener_sesion():
